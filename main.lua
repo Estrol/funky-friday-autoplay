@@ -1,6 +1,9 @@
 local framework;
 local funcs = {}
 
+local islclosure = islclosure or is_l_closure
+local getinfo = getinfo or debug.getinfo
+
 for i, v in next, getgc(true) do
     if type(v) == 'table' and rawget(v, 'GameUI') then
         framework = v;
