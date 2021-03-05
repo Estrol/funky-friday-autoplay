@@ -10,11 +10,20 @@ for i, v in next, getgc(true) do
     end
 
     if type(v) == 'function' and islclosure(v) then
-        local name = getinfo(v).name;
-        if (name == 'KeyUp' or name == 'KeyDown') and getinfo(v).source:match('%.Arrows$') then
-            funcs[name] = v;
+        local info = getinfo(v);
+        if info.name == '' then continue end
+        
+        if info.source:match('%.Arrows$') then
+            local constants = getconstants(v);
+            if table.find(constants, 'Right') and table.find(constants, 'NewThread') then
+                funcs.KeyDown = v;
+            elseif table.find(constants, 'Multiplier') and table.find(constants, 'MuteVoices') then
+                funcs.KeyUp = v;
+            end
         end
     end
+
+    if framework and funcs.KeyUp and funcs.KeyDown then break end
 end
 
 if type(framework) ~= 'table' or (not rawget(framework, 'UI')) then
