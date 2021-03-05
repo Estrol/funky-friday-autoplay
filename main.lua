@@ -3,6 +3,8 @@ local funcs = {}
 
 local islclosure = islclosure or is_l_closure
 local getinfo = getinfo or debug.getinfo
+local getupvalues = getupvalues or debug.getupvalues
+local getconstants = getconstants or debug.getconstants
 
 for i, v in next, getgc(true) do
     if type(v) == 'table' and rawget(v, 'GameUI') then
