@@ -49,7 +49,7 @@ local fastWait, fastSpawn do
     function fastWait(t)
         local d = 0;
         while d < t do
-            d += runService.RenderStepped:wait()
+            d = d + runService.RenderStepped:wait()
         end
     end
 
