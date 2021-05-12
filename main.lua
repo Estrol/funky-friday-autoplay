@@ -1,51 +1,32 @@
-local framework;
-local funcs = {}
+-- updated 5/12/21
+-- should choke less
 
-local islclosure = islclosure or is_l_closure
-local getinfo = getinfo or debug.getinfo
-local getupvalues = getupvalues or debug.getupvalues
-local getconstants = getconstants or debug.getconstants
+-- only tested on Synapse X
 
-for i, v in next, getgc(true) do
-    if type(v) == 'table' and rawget(v, 'GameUI') then
-        framework = v;
-    end
+local framework, scrollHandler do
+	for _, obj in next, getgc(true) do
+		if type(obj) == 'table' and rawget(obj, 'GameUI') then
+			framework = obj;
+			break
+		end	
+	end
 
-    if type(v) == 'function' and islclosure(v) then
-        local info = getinfo(v);
-        if info.name == '' then continue end
-        
-        if info.source:match('%.Arrows$') then
-            local constants = getconstants(v);
-            if table.find(constants, 'Right') and table.find(constants, 'NewThread') then
-                funcs.KeyDown = v;
-            elseif table.find(constants, 'Multiplier') and table.find(constants, 'MuteVoices') then
-                funcs.KeyUp = v;
-            end
-        end
-    end
-
-    if framework and funcs.KeyUp and funcs.KeyDown then break end
+	for _, module in next, getloadedmodules() do
+		if module.Name == 'ScrollHandler' then
+			scrollHandler = module;
+			break;
+		end
+	end
 end
-
-if type(framework) ~= 'table' or (not rawget(framework, 'UI')) then
-    return game.Players.LocalPlayer:Kick('Failed to locate framework.')
-elseif (not (funcs.KeyDown and funcs.KeyUp)) then
-    return game.Players.LocalPlayer:Kick('Failed to locate key functions.')
-end
-
-
-local marked = {}
-local map = { [0] = 'Left', [1] = 'Down', [2] = 'Up', [3] = 'Right', }
-local keys = { Up = Enum.KeyCode.W; Down = Enum.KeyCode.S; Left = Enum.KeyCode.A; Right = Enum.KeyCode.D; }
-
--- https://eryn.io/gist/3db84579866c099cdd5bb2ff37947cec
--- bla bla spawn and wait are bad 
--- can also use bindables for the fastspawn idc
 
 local runService = game:GetService('RunService')
+local userInputService = game:GetService('UserInputService')
 
 local fastWait, fastSpawn do
+	-- https://eryn.io/gist/3db84579866c099cdd5bb2ff37947cec
+	-- bla bla spawn and wait are bad 
+	-- can also use bindables for the fastspawn idc
+
     function fastWait(t)
         local d = 0;
         while d < t do
@@ -58,28 +39,53 @@ local fastWait, fastSpawn do
     end
 end
 
-while runService.RenderStepped:wait() do
-    for _, arrow in next, framework.UI.ActiveSections do
-        if arrow.Side ~= framework.UI.CurrentSide then continue end -- ignore the opponent's arrows
-        if marked[arrow] then continue end -- ignore marked arrows so we dont spam them
-        
-        local index = arrow.Data.Position % 4
-        local position = map[index] -- % 4 because the right side numbers are 4, 5, 6, 7 and are not in the key map
-        if (not position) then continue end -- oh well the position got eaten
-
-        local distance = (1 - math.abs(arrow.Data.Time - framework.SongPlayer.CurrentlyPlaying.TimePosition)) * 100 -- get the "distance" or whatever
-        if distance >= 95 then -- if above a certain threshold, we do this
-            marked[arrow] = true; -- mark the arrow
-            fastSpawn(function()
-                funcs.KeyDown(position)
-                if arrow.Data.Length > 0 then
-                    fastWait(arrow.Data.Length) -- usually these are held long enough
-                else
-                    fastWait(0.1) -- wait a tiny bit of time so the fucking animations play and you dont get called out as bad :)
-                end
-                funcs.KeyUp(position)
-                marked[arrow] = nil
-            end)
-        end
-    end
+local function fireSignal(target, signal, ...)
+	syn.set_thread_identity(2) -- getconnections with InputBegan / InputEnded does not work without setting Synapse to the game's ContextLevel
+	for _, signal in next, getconnections(signal) do
+		if type(signal.Function) == 'function' and islclosure(signal.Function) then
+			local scr = rawget(getfenv(signal.Function), 'script')
+			if scr == target then
+				pcall(signal.Function, ...)
+			end
+		end
+	end
+	syn.set_thread_identity(6)
 end
+
+local map = { [0] = 'Left', [1] = 'Down', [2] = 'Up', [3] = 'Right', }
+local keys = { Up = Enum.KeyCode.W; Down = Enum.KeyCode.S; Left = Enum.KeyCode.A; Right = Enum.KeyCode.D; }
+local marked = {}
+
+if shared._id then
+	pcall(runService.UnbindFromRenderStep, runService, shared._id)
+end
+
+shared._id = game:GetService('HttpService'):GenerateGUID(false)
+runService:BindToRenderStep(shared._id, 1, function()
+	for _, arrow in next, framework.UI.ActiveSections do
+		if (arrow.Side == framework.UI.CurrentSide) and (not marked[arrow]) then 
+			local indice = (arrow.Data.Position % 4) -- mod 4 because 5%4 -> 0, 6%4 = 1, etc
+			local position = map[indice]
+
+			if (position) then
+				local currentTime = framework.SongPlayer.CurrentlyPlaying.TimePosition
+				local distance = (1 - math.abs(arrow.Data.Time - currentTime)) * 100
+
+				if distance >= 95 then
+					marked[arrow] = true;
+					fireSignal(scrollHandler, userInputService.InputBegan, { KeyCode = keys[position], UserInputType = Enum.UserInputType.Keyboard }, false)
+
+					-- wait depending on the arrows length so the animation can play
+					if arrow.Data.Length > 0 then
+						fastWait(arrow.Data.Length)
+					else
+						fastWait(0.075) -- 0.1 seems to make it miss more, this should be fine enough?
+					end
+
+					fireSignal(scrollHandler, userInputService.InputEnded, { KeyCode = keys[position], UserInputType = Enum.UserInputType.Keyboard }, false)
+					marked[arrow] = false;
+				end
+			end
+		end
+	end
+end)
