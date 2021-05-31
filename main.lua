@@ -107,7 +107,7 @@ local fastWait, fastSpawn, fireSignal, rollChance do
 end
 
 local map = { [0] = 'Left', [1] = 'Down', [2] = 'Up', [3] = 'Right', }
-local keys = { Up = Enum.KeyCode.W; Down = Enum.KeyCode.S; Left = Enum.KeyCode.A; Right = Enum.KeyCode.D; }
+local keys = { Up = Enum.KeyCode.Up; Down = Enum.KeyCode.Down; Left = Enum.KeyCode.Left; Right = Enum.KeyCode.Right; }
 
 -- they are "weird" because they are in the middle of their Upper & Lower ranges 
 -- should hopefully make them more precise!
