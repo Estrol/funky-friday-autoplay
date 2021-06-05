@@ -9,6 +9,10 @@
 -- only tested on Synapse X
 -- moved ui to github & removed the kick
 
+-- for "free exploit" developers
+-- you need the following functions
+-- loadstring, HttpGet, getgc, getloadedmodules, getconnections, and set_thread_identity or whatever you call it
+
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/wally-rblx/uwuware-ui/main/main.lua"))()
 
 local framework, scrollHandler
@@ -54,10 +58,12 @@ local fastWait, fastSpawn, fireSignal, rollChance do
     function fastSpawn(f)
         coroutine.wrap(f)()
     end
-
+	
+	-- updated for script-ware or whatever
+	local set_identity = (type(syn) == 'table' and syn.set_thread_identity) or setidentity
 	function fireSignal(target, signal, ...)
 		-- getconnections with InputBegan / InputEnded does not work without setting Synapse to the game's context level
-		syn.set_thread_identity(2) 
+		set_identity(2) 
 		for _, signal in next, getconnections(signal) do
 			if type(signal.Function) == 'function' and islclosure(signal.Function) then
 				local scr = rawget(getfenv(signal.Function), 'script')
@@ -66,7 +72,7 @@ local fastWait, fastSpawn, fireSignal, rollChance do
 				end
 			end
 		end
-		syn.set_thread_identity(7)
+		set_identity(7)
 	end
 
 	-- uses a weighted random system
