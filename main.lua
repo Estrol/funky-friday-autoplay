@@ -60,7 +60,8 @@ local fastWait, fastSpawn, fireSignal, rollChance do
     end
 	
 	-- updated for script-ware or whatever
-	local set_identity = (type(syn) == 'table' and syn.set_thread_identity) or setidentity
+	-- attempted to update for krnl 
+	local set_identity = (type(syn) == 'table' and syn.set_thread_identity) or setidentity or setthreadcontext
 	function fireSignal(target, signal, ...)
 		-- getconnections with InputBegan / InputEnded does not work without setting Synapse to the game's context level
 		set_identity(2) 
