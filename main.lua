@@ -7,7 +7,9 @@
 -- hit chances are a bit rough but should work good enough
 
 -- only tested on Synapse X
-local library = loadstring(game:HttpGet("https://pastebin.com/raw/edJT9EGX"))()
+-- moved ui to github & removed the kick
+
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/wally-rblx/uwuware-ui/main/main.lua"))()
 
 local framework, scrollHandler
 while true do
