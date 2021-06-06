@@ -97,7 +97,9 @@ local fastWait, fastSpawn, fireSignal, rollChance do
 		end
 
 		if sum == 0 then
-			return choices[random:NextInteger(1, #choices)]
+			-- forgot to change this before?
+			-- fixed 6/5/21
+			return chances[random:NextInteger(1, 4)].type 
 		end
 
 		local initialWeight = random:NextInteger(0, sum)
