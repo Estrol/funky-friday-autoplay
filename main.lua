@@ -1,20 +1,7 @@
--- updated 5/12/21
--- should choke less
-
--- updated 5/16/21
--- should ignore invisible notes
--- added hit chances and a toggle
--- hit chances are a bit rough but should work good enough
-
--- only tested on Synapse X
--- moved ui to github & removed the kick
-
--- for "free exploit" developers
--- you need the following functions
--- loadstring, HttpGet, getgc, getloadedmodules, getconnections, and set_thread_identity or whatever you call it
+-- Forked with a features..
+-- Idk why
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/wally-rblx/uwuware-ui/main/main.lua"))()
-local UserInputService = game:GetService("UserInputService")
 
 local framework, scrollHandler
 while true do
@@ -69,7 +56,7 @@ local fastWait, fastSpawn, fireSignal, rollChance do
 	-- its a bit scuffed rn but it works good enough
 
 	function rollChance()
-		if (library.flags.autoPlayerMode == 'Manual') then
+        if (library.flags.autoPlayerMode == 'Manual') then
             if (library.flags.sickHeld) then return 'Sick' end
             if (library.flags.goodHeld) then return 'Good' end
             if (library.flags.okayHeld) then return 'Ok' end
@@ -77,7 +64,7 @@ local fastWait, fastSpawn, fireSignal, rollChance do
 
             return 'Bad' -- incase if it cant find one
         end
-
+        
 		local chances = {
 			{ type = 'Sick', value = library.flags.sickChance },
 			{ type = 'Good', value = library.flags.goodChance },
@@ -127,7 +114,6 @@ local chanceValues = {
 	Bad = 77,
 }
 
-local marked = {}
 local hitChances = {}
 
 if shared._id then
@@ -137,6 +123,7 @@ end
 if not shared._id then
 
 	-- not mine, got it somewhere in v3rmillion and decided to combine it
+    -- and idk where the thread
 	local ya = getrawmetatable(game)
 	local num = ya.__namecall
 	setreadonly(ya, false)
@@ -173,7 +160,7 @@ runService:BindToRenderStep(shared._id, 1, function()
             continue
         end
 
-        if (arrow.Side == framework.UI.CurrentSide) and (not marked[arrow]) then
+        if (arrow.Side == framework.UI.CurrentSide) and (not arrow.Marked) then
             local indice = (arrow.Data.Position % 4)
             local position = map[indice]
             
@@ -185,28 +172,26 @@ runService:BindToRenderStep(shared._id, 1, function()
                     continue
                 end
 
-                local hitChance = nil
-                if library.flags.autoPlayerMode == 'Manual' then
-                    hitChance = rollChance()
-                else
-                    hitChance = hitChances[arrow] or rollChance()
-                    hitChances[arrow] = hitChance
-                end
+                local result = rollChance()
+                arrow._hitChance = arrow._hitChance or result;
 
+                local hitChance = (library.flags.autoPlayerMode == 'Manual' and result or arrow._hitChance)
                 if distance >= chanceValues[hitChance] then
-                    marked[arrow] = true;
-                    fireSignal(scrollHandler, userInputService.InputBegan, { KeyCode = keys[position], UserInputType = Enum.UserInputType.Keyboard }, false)
+                    fastSpawn(function()
+                        arrow.Marked = true;
+                        fireSignal(scrollHandler, userInputService.InputBegan, { KeyCode = keys[position], UserInputType = Enum.UserInputType.Keyboard }, false)
 
-                    if arrow.Data.Length > 0 then
-                        -- wait depending on the arrows length so the animation can play
-                        fastWait(arrow.Data.Length)
-                    else
-                        -- 0.1 seems to make it miss more, this should be fine enough?
-                        fastWait(0.075) 
-                    end
+                        if arrow.Data.Length > 0 then
+                            -- wait depending on the arrows length so the animation can play
+                            fastWait(arrow.Data.Length)
+                        else
+                            -- 0.1 seems to make it miss more, this should be fine enough?
+                            fastWait(0.05) 
+                        end
 
-                    fireSignal(scrollHandler, userInputService.InputEnded, { KeyCode = keys[position], UserInputType = Enum.UserInputType.Keyboard }, false)
-                    marked[arrow] = false;
+                        fireSignal(scrollHandler, userInputService.InputEnded, { KeyCode = keys[position], UserInputType = Enum.UserInputType.Keyboard }, false)
+                        arrow.Marked = nil;
+                    end)
                 end
             end
         end
@@ -242,8 +227,11 @@ local window = library:CreateWindow('Funky Friday') do
 		folder:AddLabel({ text = 'Jan - UI library' })
 		folder:AddLabel({ text = 'wally - Script' })
 	end
+
+    window:AddLabel({ text = "Version: 1.3" })
 end
 
+-- still using this as the keybind I use
 local function HandleInputKeyCode(input, processed)
     if input.UserInputType == Enum.UserInputType.Keyboard then
         if input.KeyCode == Enum.KeyCode.F4 and not processed then
