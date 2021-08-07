@@ -235,8 +235,7 @@ end
 local function HandleInputKeyCode(input, processed)
     if input.UserInputType == Enum.UserInputType.Keyboard then
         if input.KeyCode == Enum.KeyCode.F4 and not processed then
-            marked = {} -- Attempt to clear the lag after playing map
-            hitChances = {}
+            hitChances = {} -- Attempt to clear the lag after playing map
         else if input.KeyCode == Enum.KeyCode.F5 and not processed then
             library:Close() -- Dunno why it called Close() not just called Toggle()
             end
